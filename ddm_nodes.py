@@ -86,17 +86,3 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DDM_GetNode": "DDM Get Node",
 }
 ```
-
-**The KEY fix:** `OUTPUT_NODE = True` on Set node
-
-This tells ComfyUI "execute this node even if nothing uses its output" - which is essential for Set nodes to work.
-
-**However**, there's still one requirement: **The Set node must be connected to something in your workflow that leads to the final output.** Otherwise ComfyUI won't include it in the execution graph at all.
-
-So the workflow should be:
-```
-Input → Set Node → Continue your workflow → Output
-           ↓ (stores value)
-           (no connection)
-           ↑ (retrieves value)
-        Get Node → Use somewhere else
