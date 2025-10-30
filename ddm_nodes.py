@@ -1,3 +1,47 @@
+"""
+DDM Bundle - Set/Get Nodes for ComfyUI
+Clean workflow routing without spaghetti connections
+"""
+
+# Global storage for values
+STORAGE = {}
+
+# Wildcard type that accepts anything
+class AnyType(str):
+    def __ne__(self, __value: object) -> bool:
+        return False
+
+any_type = AnyType("*")
+
+
+class DDM_SetNode:
+    """
+    Store any value with a unique identifier.
+    """
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "value": (any_type,),
+                "id": ("STRING", {
+                    "default": "value",
+                    "multiline": False
+                }),
+            },
+        }
+    
+    RETURN_TYPES = (any_type,)
+    FUNCTION = "set_value"
+    CATEGORY = "DDM Bundle"
+    OUTPUT_NODE = True
+    
+    def set_value(self, value, id="value"):
+        """Store the value and pass it through"""
+        STORAGE[id] = value
+        return (value,)
+
+
 class DDM_GetNode:
     """
     Retrieve a stored value by identifier.
@@ -51,3 +95,15 @@ class DDM_GetNode:
             # This should rarely happen if the workflow is properly connected
             print(f"Warning: DDM_GetNode couldn't find value for id '{id}'")
             return (None,)
+
+
+# Node registration for ComfyUI
+NODE_CLASS_MAPPINGS = {
+    "DDM_SetNode": DDM_SetNode,
+    "DDM_GetNode": DDM_GetNode,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "DDM_SetNode": "DDM Set Node",
+    "DDM_GetNode": "DDM Get Node",
+}
