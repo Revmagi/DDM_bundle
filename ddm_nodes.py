@@ -1,6 +1,6 @@
 """
 DDM Bundle - Set/Get Nodes for ComfyUI
-Clean workflow routing without spaghetti connections
+Backend execution logic
 """
 
 STORAGE = {}
@@ -58,7 +58,7 @@ class DDM_GetNode:
     
     def execute(self, id):
         if id not in STORAGE:
-            raise ValueError(f"DDM Get Node Error: ID '{id}' not found in storage!")
+            return (None,)
         return (STORAGE[id],)
 
 
@@ -71,3 +71,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DDM_SetNode": "DDM Set Node",
     "DDM_GetNode": "DDM Get Node",
 }
+
+WEB_DIRECTORY = "./web"
