@@ -32,7 +32,7 @@ class DDM_SetNode:
     RETURN_NAMES = ("value",)
     FUNCTION = "execute"
     CATEGORY = "DDM Bundle"
-    OUTPUT_NODE = True  # CRITICAL: Forces execution even without output connections
+    OUTPUT_NODE = True
     
     def execute(self, value, id):
         STORAGE[id] = value
@@ -60,7 +60,6 @@ class DDM_GetNode:
     
     @classmethod
     def IS_CHANGED(cls, id):
-        # Always re-execute
         return float("nan")
     
     def execute(self, id):
@@ -85,4 +84,3 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DDM_SetNode": "DDM Set Node",
     "DDM_GetNode": "DDM Get Node",
 }
-```
