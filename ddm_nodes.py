@@ -83,15 +83,3 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DDM_SetNode": "DDM Set Node",
     "DDM_GetNode": "DDM Get Node",
 }
-```
-
-**Key changes:**
-1. Set node now outputs **both the value AND the id**
-2. Get node has a **trigger input** (connect the `id_out` from Set to this)
-3. Heavy debug printing to see execution order
-
-**How to connect:**
-```
-[Something] → Set Node (value input)
-              Set Node (id_out output) → Get Node (trigger input)
-                                         Get Node → [Something else]
