@@ -17,7 +17,7 @@ any_type = AnyType("*")
 class DDM_SetNode:
     """
     Store any value with a unique identifier.
-    Use this to clean up your workflow by avoiding long connection lines.
+    Dynamically displays the type of data connected.
     """
     
     @classmethod
@@ -25,20 +25,22 @@ class DDM_SetNode:
         return {
             "required": {
                 "value": (any_type,),
+            },
+            "optional": {
                 "id": ("STRING", {
-                    "default": "my_value",
+                    "default": "value",
                     "multiline": False
                 }),
-            },
+            }
         }
     
     RETURN_TYPES = (any_type,)
-    RETURN_NAMES = ("value",)
+    RETURN_NAMES = ("*",)
     FUNCTION = "set_value"
     CATEGORY = "DDM Bundle"
     OUTPUT_NODE = True
     
-    def set_value(self, value, id):
+    def set_value(self, value, id="value"):
         """Store the value and pass it through"""
         STORAGE[id] = value
         return (value,)
@@ -47,16 +49,20 @@ class DDM_SetNode:
 class DDM_GetNode:
     """
     Retrieve a stored value by identifier.
-    Must match the ID used in a Set Node.
+    Dropdown automatically shows all available Set node IDs.
     """
     
     @classmethod
     def INPUT_TYPES(cls):
+        # Get list of all stored IDs for the dropdown
+        stored_ids = list(STORAGE.keys())
+        if not stored_ids:
+            stored_ids = [""]
+        
         return {
             "required": {
-                "id": ("STRING", {
-                    "default": "my_value",
-                    "multiline": False
+                "id": (stored_ids, {
+                    "default": stored_ids[0] if stored_ids else ""
                 }),
             },
             "optional": {
@@ -65,24 +71,19 @@ class DDM_GetNode:
         }
     
     RETURN_TYPES = (any_type,)
-    RETURN_NAMES = ("value",)
+    RETURN_NAMES = ("*",)
     FUNCTION = "get_value"
     CATEGORY = "DDM Bundle"
     
     @classmethod
     def VALIDATE_INPUTS(cls, id, default=None):
-        """
-        Allow validation to pass even if the value isn't stored yet.
-        This prevents validation errors during workflow loading.
-        """
+        """Allow validation to pass even if the value isn't stored yet"""
         return True
     
     @classmethod
     def IS_CHANGED(cls, id, default=None):
-        """
-        Force re-execution every time to ensure fresh values.
-        Using float("nan") ensures the node always re-executes.
-        """
+        """Force re-execution to ensure fresh values and update dropdown"""
+        # This also helps refresh the dropdown list
         return float("nan")
     
     def get_value(self, id, default=None):
@@ -92,7 +93,6 @@ class DDM_GetNode:
         elif default is not None:
             return (default,)
         else:
-            # Fallback: return None if no value found
             print(f"Warning: DDM_GetNode couldn't find value for id '{id}' and no default provided")
             return (None,)
 
@@ -104,6 +104,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "DDM_SetNode": "DDM Set Value",
-    "DDM_GetNode": "DDM Get Value",
+    "DDM_SetNode": "DDM Set Node",
+    "DDM_GetNode": "DDM Get Node",
 }
