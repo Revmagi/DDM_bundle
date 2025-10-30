@@ -19,6 +19,9 @@ class DDM_SetNode:
     Store any value with a unique identifier.
     """
     
+    def __init__(self):
+        pass
+    
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -26,17 +29,17 @@ class DDM_SetNode:
                 "value": (any_type,),
                 "id": ("STRING", {
                     "default": "value",
-                    "multiline": False
                 }),
             },
         }
     
     RETURN_TYPES = (any_type,)
-    FUNCTION = "set_value"
+    RETURN_NAMES = ("value",)
+    FUNCTION = "execute"
     CATEGORY = "DDM Bundle"
-    OUTPUT_NODE = True
+    OUTPUT_NODE = False
     
-    def set_value(self, value, id="value"):
+    def execute(self, value, id):
         """Store the value and pass it through"""
         STORAGE[id] = value
         return (value,)
@@ -47,54 +50,50 @@ class DDM_GetNode:
     Retrieve a stored value by identifier.
     """
     
+    def __init__(self):
+        pass
+    
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "id": ("STRING", {
                     "default": "value",
-                    "multiline": False
                 }),
-            },
-            "optional": {
-                "default": (any_type,),
             },
         }
     
     RETURN_TYPES = (any_type,)
-    FUNCTION = "get_value"
+    RETURN_NAMES = ("value",)
+    FUNCTION = "execute"
     CATEGORY = "DDM Bundle"
+    OUTPUT_NODE = False
     
     @classmethod
-    def VALIDATE_INPUTS(cls, id, default=None, **kwargs):
+    def VALIDATE_INPUTS(cls, id):
         """
-        CRITICAL: Always return True to pass validation.
-        This prevents the node from being marked invalid during workflow loading
-        when STORAGE is empty (before Set nodes have executed).
+        Always return True - validation happens at execution time
         """
         return True
     
     @classmethod
-    def IS_CHANGED(cls, id, default=None, **kwargs):
+    def IS_CHANGED(cls, id):
         """
-        Force re-execution every time.
-        This ensures we always get fresh values from STORAGE.
+        Force re-execution every time
         """
         return float("nan")
     
-    def get_value(self, id, default=None, **kwargs):
+    def execute(self, id):
         """
-        Retrieve the stored value.
-        By the time this executes, Set nodes should have already run.
+        Retrieve the stored value
         """
-        if id in STORAGE:
-            return (STORAGE[id],)
-        elif default is not None:
-            return (default,)
-        else:
-            # This should rarely happen if the workflow is properly connected
-            print(f"Warning: DDM_GetNode couldn't find value for id '{id}'")
+        if id not in STORAGE:
+            print(f"Warning: DDM_GetNode - ID '{id}' not found in storage")
+            print(f"Available IDs: {list(STORAGE.keys())}")
+            # Return a dummy value to prevent validation errors
             return (None,)
+        
+        return (STORAGE[id],)
 
 
 # Node registration for ComfyUI
