@@ -16,7 +16,7 @@ any_type = AnyType("*")
 
 class DDM_SetNode:
     """
-    Store any value with a unique identifier.
+    Store any value with a unique identifier and pass it through.
     """
     
     @classmethod
@@ -32,12 +32,11 @@ class DDM_SetNode:
     RETURN_NAMES = ("value",)
     FUNCTION = "execute"
     CATEGORY = "DDM Bundle"
-    OUTPUT_NODE = True
     
     def execute(self, value, id):
         STORAGE[id] = value
-        print(f"[DDM Set] Stored '{id}' | Storage: {list(STORAGE.keys())}")
-        return {"ui": {"text": [f"Stored: {id}"]}, "result": (value,)}
+        print(f"✓ [DDM Set] Stored '{id}' successfully")
+        return (value,)
 
 
 class DDM_GetNode:
@@ -51,6 +50,9 @@ class DDM_GetNode:
             "required": {
                 "id": ("STRING", {"default": "value"}),
             },
+            "optional": {
+                "default": (any_type,),
+            },
         }
     
     RETURN_TYPES = (any_type,)
@@ -59,19 +61,33 @@ class DDM_GetNode:
     CATEGORY = "DDM Bundle"
     
     @classmethod
-    def IS_CHANGED(cls, id):
+    def IS_CHANGED(cls, id, default=None):
         return float("nan")
     
-    def execute(self, id):
-        print(f"[DDM Get] Looking for '{id}' | Available: {list(STORAGE.keys())}")
+    def execute(self, id, default=None):
+        print(f"→ [DDM Get] Attempting to retrieve '{id}'")
+        print(f"  Current storage: {list(STORAGE.keys())}")
         
         if id not in STORAGE:
-            raise ValueError(
-                f"Get Node Error: '{id}' not found!\n"
-                f"Available IDs: {list(STORAGE.keys())}\n"
-                f"Make sure the Set node with id='{id}' is connected to your workflow."
-            )
+            if default is not None:
+                print(f"⚠ [DDM Get] '{id}' not found, using default value")
+                return (default,)
+            else:
+                error_msg = (
+                    f"\n{'='*60}\n"
+                    f"DDM Get Node Error: ID '{id}' not found!\n"
+                    f"Current storage: {list(STORAGE.keys())}\n\n"
+                    f"Troubleshooting:\n"
+                    f"1. Make sure there's a Set Node with id='{id}'\n"
+                    f"2. The Set Node OUTPUT must be connected to your workflow\n"
+                    f"3. The Set Node must lead to a final output node\n"
+                    f"4. Try adding a 'default' input to this Get Node as backup\n"
+                    f"{'='*60}\n"
+                )
+                print(error_msg)
+                raise ValueError(error_msg)
         
+        print(f"✓ [DDM Get] Successfully retrieved '{id}'")
         return (STORAGE[id],)
 
 
