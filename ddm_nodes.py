@@ -28,15 +28,16 @@ class DDM_SetNode:
             },
         }
     
-    RETURN_TYPES = (any_type, "STRING")
-    RETURN_NAMES = ("value", "id_out")
+    RETURN_TYPES = (any_type,)
+    RETURN_NAMES = ("value",)
     FUNCTION = "execute"
     CATEGORY = "DDM Bundle"
+    OUTPUT_NODE = True  # CRITICAL: Forces execution even without output connections
     
     def execute(self, value, id):
         STORAGE[id] = value
-        print(f"[DDM Set] Stored '{id}' | Type: {type(value).__name__} | Storage now has: {list(STORAGE.keys())}")
-        return (value, id)
+        print(f"[DDM Set] Stored '{id}' | Storage: {list(STORAGE.keys())}")
+        return {"ui": {"text": [f"Stored: {id}"]}, "result": (value,)}
 
 
 class DDM_GetNode:
@@ -48,7 +49,6 @@ class DDM_GetNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "trigger": ("STRING", {"default": ""}),
                 "id": ("STRING", {"default": "value"}),
             },
         }
@@ -59,19 +59,21 @@ class DDM_GetNode:
     CATEGORY = "DDM Bundle"
     
     @classmethod
-    def IS_CHANGED(cls, trigger, id):
+    def IS_CHANGED(cls, id):
+        # Always re-execute
         return float("nan")
     
-    def execute(self, trigger, id):
-        print(f"[DDM Get] Looking for '{id}' | Storage currently has: {list(STORAGE.keys())}")
+    def execute(self, id):
+        print(f"[DDM Get] Looking for '{id}' | Available: {list(STORAGE.keys())}")
         
         if id not in STORAGE:
-            print(f"[DDM Get] ERROR: '{id}' not found!")
-            raise ValueError(f"DDM Get Node: ID '{id}' not found in storage. Available IDs: {list(STORAGE.keys())}")
+            raise ValueError(
+                f"Get Node Error: '{id}' not found!\n"
+                f"Available IDs: {list(STORAGE.keys())}\n"
+                f"Make sure the Set node with id='{id}' is connected to your workflow."
+            )
         
-        value = STORAGE[id]
-        print(f"[DDM Get] Successfully retrieved '{id}'")
-        return (value,)
+        return (STORAGE[id],)
 
 
 NODE_CLASS_MAPPINGS = {
@@ -83,3 +85,18 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DDM_SetNode": "DDM Set Node",
     "DDM_GetNode": "DDM Get Node",
 }
+```
+
+**The KEY fix:** `OUTPUT_NODE = True` on Set node
+
+This tells ComfyUI "execute this node even if nothing uses its output" - which is essential for Set nodes to work.
+
+**However**, there's still one requirement: **The Set node must be connected to something in your workflow that leads to the final output.** Otherwise ComfyUI won't include it in the execution graph at all.
+
+So the workflow should be:
+```
+Input → Set Node → Continue your workflow → Output
+           ↓ (stores value)
+           (no connection)
+           ↑ (retrieves value)
+        Get Node → Use somewhere else
